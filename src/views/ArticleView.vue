@@ -1,9 +1,9 @@
 <template>
   <div>
-    <div class="box has-background-warning is-size-1 is-family-primary">
+    <div class="box has-background-warning is-size-1 is-family-primary has-text-centered">
       <h1>Post details page</h1>
     </div>
-    <div class="container">
+    <div class="container has-text-centered">
       <section class="section">
         <div class="content is-medium">
           <h1 class="title">{{ title }}</h1>
@@ -24,13 +24,12 @@
 </template>
 
 <script>
-import Methods from '../Methods/CommonMethods.js'
-import mixinForModalVisibility from '../mixins/mixinForModalVisibility.js'
+import modalMixin from '../mixins/ModalMixin.js'
 import Modal from '../Componnents/modal.vue'
-import ActionMessage from '../Componnents/ActionMessage.vue'
+import ActionMessage from '../Componnents/Message.vue'
 export default {
   name: 'articleView',
-  mixins: [mixinForModalVisibility],
+  mixins: [modalMixin],
   data() {
     return {
       title: '',
@@ -48,10 +47,10 @@ export default {
   methods: {
     async getArticleData() {
       try {
-        const response = await Methods.getArticles(this.$route.params.id)
+        const response = await this.$articles.getArticles(this.$route.params.id)
         const createdAt = new Date(response.created_at)
         const updatedAt = new Date(response.updated_at)
-        const response2 = await Methods.getAuthors(response.author)
+        const response2 = await this.$articles.getAuthors(response.author)
         this.title = response.title
         this.author = response2.name
         this.articleContent = response.body
@@ -64,7 +63,7 @@ export default {
     async deleteArticle(index) {
       if (confirm("Do you really want to delete?")) {
         try {
-          await Methods.deleteArticle(index)
+          await this.$articles.deleteArticle(index)
           this.closeModalAfterAction({ type: 'delete', sucess: 'sucess' })
         }
         catch (err) {
@@ -81,7 +80,7 @@ export default {
     closeActionModal() {
       this.showUpdateMessage = false;
       if (this.showActionType == 'update' && this.sucess == 'sucess') {
-        this.$router.go(0);
+        this.getArticleData()
       }
       else if (this.showActionType == 'delete' && this.sucess == 'sucess') {
         this.$router.push('/')

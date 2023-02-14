@@ -13,9 +13,7 @@
           <div class="field">
             <label class="label">Title</label>
             <div class="control">
-              <input v-if="this.actionType != 'edit'" class="input" :class="badTitle ? 'is-danger' : ''" v-model="title"
-                type="text" placeholder="Title">
-              <input v-if="this.actionType == 'edit'" class="input" :class="badTitle ? 'is-danger' : ''" v-model="title"
+              <input class="input" :class="badTitle ? 'is-danger' : ''" v-model="title"
                 type="text" placeholder="Title">
               <p v-show="badTitle" class="help is-danger">Tittle is empty</p>
             </div>
@@ -35,19 +33,15 @@
           <div class="field">
             <label class="label">Content</label>
             <div class="control">
-              <textarea v-if="this.actionType != 'edit'" :class="badContent ? 'is-danger' : ''" v-model="content"
-                class="textarea" placeholder="Content area"></textarea>
-              <textarea v-if="this.actionType == 'edit'" :class="badContent ? 'is-danger' : ''" v-model="content"
+              <textarea :class="badContent ? 'is-danger' : ''" v-model="content"
                 class="textarea" placeholder="Content area"></textarea>
               <p v-show="badContent" class="help is-danger">Content is empty</p>
             </div>
           </div>
         </section>
         <footer class="modal-card-foot">
-          <button v-if="this.actionType != 'edit'" @click="createPost" class="button is-success">Save changes</button>
-          <button v-if="this.actionType == 'edit'" @click="updateArticle" class="button is-success">Save
-            changes</button>
-          <button @click.prevent="close('close')" class="button is-danger">Close</button>
+          <button @click="doAction" class="button is-success">Save changes</button>
+          <button @click.prevent="close()" class="button is-danger">Close</button>
         </footer>
 
 
@@ -58,11 +52,8 @@
 </template>
 
 <script>
-import Methods from '../Methods/CommonMethods.js'
-import closeMixin from '../mixins/mixinForClose.js'
 export default {
   name: 'Modal',
-  mixins: [closeMixin],
   data() {
     return {
       Authors: [],
@@ -76,14 +67,15 @@ export default {
   },
   props: {
     actionType: { type: String, required: true },
-    editIndex: { type: Number }
+    editIndex: { type: Number },
+    isActive: { type: Boolean, default: false, required: true }
   },
   methods: {
     closeAfterAction(type, sucess) {
       this.$emit('close-after-action', { type: type, sucess: sucess });
     },
     async getAuthors() {
-      this.Authors = await Methods.getAuthors('')
+      this.Authors = await this.$articles.getAuthors('')
     },
     validateForm() {
       if (!this.title) {
@@ -109,7 +101,30 @@ export default {
       }
       return true
     },
-    async createPost() {
+    async setInitialEditDAta() {
+      if (this.actionType == 'edit') {
+        const response = await this.$articles.getArticles(this.editIndex)
+        this.author = response.author
+        this.title = response.title
+        this.content = response.body
+
+      }
+    },
+    async doAction() {
+      if(this.actionType == 'edit'){
+        if (!this.validateForm()) {
+        return
+      }
+        try {
+          await this.$articles.updateArticle(this.editIndex, this.title, this.content)
+          this.closeAfterAction('update', 'sucess')
+        }
+        catch (err) {
+          this.closeAfterAction('update', 'failure')
+        }
+      }
+    
+    else{
       if (!this.validateForm()) {
         return
       }
@@ -121,47 +136,17 @@ export default {
         updated_at: new Date().toLocaleString()
       }
       try {
-        await Methods.postArticle(article)
+        await this.$articles.postArticle(article)
         this.closeAfterAction('create', 'sucess')
       }
       catch (err) {
         this.closeAfterAction('create', 'failure')
       }
+    }
 
     },
-    async setInitialEditDAta() {
-      if (this.actionType == 'edit') {
-        const response = await Methods.getArticles(this.editIndex)
-        this.author = response.author
-        this.title = response.title
-        this.content = response.body
-
-      }
-    },
-    async updateArticle() {
-      if (this.title == null || this.title == "") {
-        this.badTitle = true
-      }
-      else {
-        this.badTitle = false
-      }
-
-      if (this.content == null || this.content == "") {
-        this.badContent = true
-      }
-      else {
-        this.badContent = false
-      }
-      if (!this.badContent && !this.badTitle) {
-        try {
-          await Methods.updateArticle(this.editIndex, this.title, this.content)
-          this.closeAfterAction('update', 'sucess')
-        }
-        catch (err) {
-          this.closeAfterAction('update', 'failure')
-        }
-      }
-
+    close() {
+      this.$emit('close');
     }
   },
 

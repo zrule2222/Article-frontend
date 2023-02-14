@@ -24,35 +24,25 @@
         <Articles @delete-action="setDeleteActionMessage" @show-edit="showEditModal" :Article="article"> </Articles>
       </div>
     </div>
-    <div v-else class="notification is-danger ">
-      <button class="delete"></button>
-      Currently there are no articles
+    <div v-else class="notification is-danger has-text-centered">
+      <p>Currently there are no articles</p>
     </div>
+    <div class="columns is-centered">
     <Pagination @onPageChange="handlePageChange" :currentPage="currentPage" :pages="pagesCount"></Pagination>
+</div>
   </div>
 </template>
 
 <script>
-
-
-document.addEventListener('DOMContentLoaded', () => {
-  (document.querySelectorAll('.notification .delete') || []).forEach(($delete) => {
-    const $notification = $delete.parentNode;
-
-    $delete.addEventListener('click', () => {
-      $notification.parentNode.removeChild($notification);
-    });
-  });
-});
-import Methods from '../Methods/CommonMethods.js'
-import mixinForModalVisibility from '../mixins/mixinForModalVisibility.js'
-import Articles from '../Componnents/Articles.vue'
+import modalMixin from '../mixins/ModalMixin.js'
+import MessageMixing from '../mixins/MessageMixin.js'
+import Articles from '../Componnents/Article.vue'
 import Pagination from '../Componnents/pagination.vue'
 import Modal from '../Componnents/modal.vue'
-import ActionMessage from '../Componnents/ActionMessage.vue'
+import ActionMessage from '../Componnents/Message.vue'
 export default {
   name: 'postPage',
-  mixins: [mixinForModalVisibility],
+  mixins: [modalMixin,MessageMixing],
   components: {
     Articles,
     Pagination,
@@ -62,24 +52,18 @@ export default {
   data() {
     return {
       articles: [],
-      authors: [],
-      createdAtDate: '',
       pagesCount: 0,
       limit: 2,
-      editIndex: 0,
-      actionType: "",
       noArticles: false,
       searchedValue: "",
-      showUpdateMessage: false,
-      showActionType: '',
-      sucess: '',
       currentPage: 1,
     }
   },
   methods: {
     async getArticles(page) {
       let totalPages = page < 0 || !page ? 1 : page
-      const response = await Methods.getArticlesByPage(totalPages, this.limit, this.searchedValue)
+      try{
+      const response = await this.$articles.getArticlesByPage(totalPages, this.limit, this.searchedValue)
       this.countPages(parseInt(response.headers['x-total-count']))
       if (response.data.length > 0) {
         this.articles = response.data
@@ -88,10 +72,12 @@ export default {
       else {
         this.noArticles = true
       }
+    }
+    catch(err){
+      this.noArticles = true
+    }
 
     },
-
-
     countPages(postsNumber) {
       let pages = Math.ceil(postsNumber / this.limit)
       this.pagesCount = pages
@@ -99,33 +85,6 @@ export default {
     handlePageChange(data) {
       this.currentPage = data.page
       this.getArticles(data.page)
-    },
-    showEditModal(index) {
-      this.editIndex = index
-      this.actionType = 'edit'
-      this.isModalVisible = true;
-    },
-    closeModal() {
-      this.isModalVisible = false;
-      this.editIndex = -1
-      this.actionType = ''
-    },
-    closeActionModal() {
-      this.showUpdateMessage = false;
-      if (this.showActionType == 'delete' && this.sucess == 'sucess') {
-        this.$router.go(0);
-      }
-      this.showActionType = ''
-      this.sucess = ''
-    },
-    closeModalAfterAction(data) {
-      this.isModalVisible = false;
-      this.getArticles(1)
-      this.currentPage = 1
-      this.editIndex = -1
-      this.showActionType = data.type
-      this.sucess = data.sucess
-      this.showUpdateMessage = true
     },
     setDeleteActionMessage(data) {
       this.showActionType = data.actionType
