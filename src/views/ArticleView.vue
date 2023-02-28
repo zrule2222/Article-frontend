@@ -83,7 +83,7 @@ export default {
         this.getArticleData()
       }
       else if (this.showActionType == 'delete' && this.sucess == 'sucess') {
-        this.$router.push('/')
+        this.$router.push('/posts')
       }
       this.showActionType = ''
       this.sucess = ''

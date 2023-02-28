@@ -132,8 +132,8 @@ export default {
         title: this.title,
         body: this.content,
         author: this.author,
-        created_at: new Date().toLocaleString(),
-        updated_at: new Date().toLocaleString()
+        //created_at: new Date().toLocaleString(),
+        //updated_at: new Date().toLocaleString()
       }
       try {
         await this.$articles.postArticle(article)

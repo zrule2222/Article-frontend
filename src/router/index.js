@@ -3,6 +3,8 @@ import VueRouter from 'vue-router'
 import postPage from '../views/PostPage.vue'
 import Page404 from '../views/404page.vue'
 import ArticleView from '../views/ArticleView.vue'
+import LoginPage from '../views/LoginPage.vue'
+import RegisterPage from '../views/RegistrationPage.vue'
 import axios from 'axios';
 import babelPolyfill from 'babel-polyfill'
 
@@ -14,7 +16,20 @@ const router = new VueRouter({
         {
             path: '/',
             name: "Home",
-            component: postPage
+            component: LoginPage,
+            props:true
+        },
+        {
+            path: '/posts',
+            name: "Posts",
+            component: postPage,
+            meta: {requiresAuth: true}
+           
+        },
+        {
+            path: '/registration',
+            name: "Registration",
+            component: RegisterPage
         },
         {
             path: '/404',
@@ -28,7 +43,7 @@ const router = new VueRouter({
             beforeEnter: async (to, from, next) => {
 
                 try {
-                    const response = await axios.get(`http://localhost:3000/Articles/${to.params.id}`)
+                    const response = await axios.get(`http://127.0.0.1:5022/api/article/${to.params.id}`)
                     if (response.status == 200) {
                         next()
                     }
@@ -46,5 +61,19 @@ const router = new VueRouter({
 
     ]
 })
+router.beforeEach((to, from, next) => {
+    if (to.meta.requiresAuth) {
+      if (localStorage.getItem("token") == null) {
+        next({
+          path: "/",
+        });
+      }
+      else{
+        next();
+      } 
+    } else {
+      next();
+    }
+  });
 
 export default router

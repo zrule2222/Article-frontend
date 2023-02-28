@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="box has-background-primary is-size-1 is-family-primary">
+    <div class="box has-background-primary is-size-1 is-family-primary is-justify-content-center has-text-centered">
       <h1>Post page</h1>
     </div>
     <div class="field is-grouped is-grouped-centered">
@@ -8,6 +8,11 @@
       <div class="control">
         <input v-model="searchedValue" @input="getArticles(1)" class="input" type="text" placeholder="Look for Article">
       </div>
+      <button class="button" @click="logout">
+    <span class="icon is-small">
+      <i class="fa-solid fa-right-from-bracket"></i>
+    </span>
+  </button>
     </div>
     <Modal v-if="isModalVisible" @close-after-action="closeModalAfterAction" @close="closeModal()"
       :is-active="isModalVisible" :actionType="this.actionType" :editIndex="this.editIndex"></Modal>
@@ -64,8 +69,9 @@ export default {
       let totalPages = page < 0 || !page ? 1 : page
       try{
       const response = await this.$articles.getArticlesByPage(totalPages, this.limit, this.searchedValue)
-      this.countPages(parseInt(response.headers['x-total-count']))
-      if (response.data.length > 0) {
+      const response2 = await this.$articles.getArticlesByPageCount(totalPages, this.limit, this.searchedValue)
+      this.pagesCount = response2.data.pagecount
+      if (response2.data.pagecount > 0) {
         this.articles = response.data
         this.noArticles = false
       }
@@ -78,9 +84,15 @@ export default {
     }
 
     },
-    countPages(postsNumber) {
-      let pages = Math.ceil(postsNumber / this.limit)
-      this.pagesCount = pages
+    async logout(){
+      try{
+   await this.$articles.logout()
+      }
+      catch(error){
+        this.showActionType = "Logout"
+      this.sucess = "failure"
+      this.showUpdateMessage = true
+      }
     },
     handlePageChange(data) {
       this.currentPage = data.page
@@ -95,6 +107,7 @@ export default {
 
   },
   created() {
+    
     this.getArticles(1)
 
   }
